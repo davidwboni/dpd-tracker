@@ -27,9 +27,13 @@ const Login = () => {
   const handleGoogleLogin = async () => {
     try {
       const provider = new GoogleAuthProvider();
+      provider.setCustomParameters({
+        prompt: 'select_account'
+      });
       await signInWithPopup(auth, provider);
     } catch (err) {
-      setError('Google sign in failed');
+      console.error('Google sign in error:', err);
+      setError(`Sign in failed: ${err.message}`);
     }
   };
 
