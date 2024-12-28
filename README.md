@@ -37,7 +37,7 @@ A modern React application for delivery drivers to track stops, calculate earnin
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/stop-tracker.git
+git clone https://github.com/davidwboni/stop-tracker.git
 ```
 
 2. Install dependencies:
@@ -88,6 +88,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Contact 📧
 
-Your Name - [@yourtwitter](https://twitter.com/yourtwitter) - email@example.com
+Your Name - davidwboni@gmail.com
 
-Project Link: [https://github.com/yourusername/stop-tracker](https://github.com/yourusername/stop-tracker)
+Project Link: [https://github.com/yourusername/stop-tracker](https://github.com/davidwboni/stop-tracker)
