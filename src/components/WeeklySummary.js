@@ -32,19 +32,19 @@ const WeeklySummary = ({ logs }) => {
       <CardContent>
         <div className="space-y-4">
           {weeklyStats.map((stat) => (
-            <div key={stat.week} className="p-4 bg-gray-50 rounded-lg">
-              <div className="text-sm text-gray-600">Week {stat.week}</div>
+            <div key={stat.week} className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+              <div className="text-sm text-gray-600 dark:text-gray-400">Week {stat.week}</div>
               <div className="grid grid-cols-3 gap-4 mt-2">
                 <div>
-                  <div className="text-xs text-gray-500">Total Stops</div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400">Total Stops</div>
                   <div className="font-bold">{stat.totalStops}</div>
                 </div>
                 <div>
-                  <div className="text-xs text-gray-500">Average</div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400">Average</div>
                   <div className="font-bold">{Math.round(stat.averageStops)}</div>
                 </div>
                 <div>
-                  <div className="text-xs text-gray-500">Earnings</div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400">Earnings</div>
                   <div className="font-bold">£{stat.totalEarnings.toFixed(2)}</div>
                 </div>
               </div>

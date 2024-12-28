@@ -1,34 +1,77 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
- 
+
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --background: #ffffff;
+    --foreground: #000000;
     
-    /* Purple theme */
-    --primary: 267 100% 60%; /* Purple */
-    --primary-foreground: 0 0% 100%;
-    --secondary: 267 50% 95%;
-    --secondary-foreground: 267 100% 30%;
+    --card: #ffffff;
+    --card-foreground: #000000;
     
-    --muted: 267 50% 95%;
-    --muted-foreground: 267 30% 50%;
-    --accent: 267 50% 95%;
-    --accent-foreground: 267 100% 30%;
+    --primary: #8b5cf6;
+    --primary-foreground: #ffffff;
     
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 100%;
+    --secondary: #f3f4f6;
+    --secondary-foreground: #1f2937;
     
-    --border: 267 30% 90%;
-    --input: 267 30% 90%;
-    --ring: 267 100% 60%;
+    --muted: #f3f4f6;
+    --muted-foreground: #6b7280;
     
-    --radius: 0.5rem;
+    --accent: #f3f4f6;
+    --accent-foreground: #1f2937;
+    
+    --destructive: #ef4444;
+    --destructive-foreground: #ffffff;
+    
+    --border: #e5e7eb;
+    --input: #e5e7eb;
+    --ring: #8b5cf6;
   }
+
+  .dark {
+    --background: #1a1a1a;
+    --foreground: #ffffff;
+    
+    --card: #2d2d2d;
+    --card-foreground: #ffffff;
+    
+    --primary: #8b5cf6;
+    --primary-foreground: #ffffff;
+    
+    --secondary: #374151;
+    --secondary-foreground: #f3f4f6;
+    
+    --muted: #374151;
+    --muted-foreground: #9ca3af;
+    
+    --accent: #374151;
+    --accent-foreground: #f3f4f6;
+    
+    --destructive: #ef4444;
+    --destructive-foreground: #ffffff;
+    
+    --border: #374151;
+    --input: #374151;
+    --ring: #8b5cf6;
+  }
+}
+
+@layer components {
+  .card {
+    @apply bg-card text-card-foreground;
+  }
+
+  .input {
+    @apply bg-background border-input;
+  }
+
+  .button {
+    @apply bg-primary text-primary-foreground hover:bg-purple-700;
+  }
+}
+
+body {
+  @apply bg-background text-foreground;
 }

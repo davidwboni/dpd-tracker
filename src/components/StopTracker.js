@@ -1,32 +1,40 @@
+import ModernDashboard from './ModernDashboard';
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
-import { Trash2, PlusCircle, FileText, ChartBar, Settings, Calendar } from 'lucide-react';
+import {  
+  PlusCircle, 
+  BarChart2, 
+  Settings, 
+  Calendar,
+  Loader2,
+  Calculator 
+} from 'lucide-react';
 import { Alert, AlertDescription } from "./ui/alert";
 import PaymentConfig from './PaymentConfig';
 import StatsOverview from './StatsOverview';
 import WeeklySummary from './WeeklySummary';
+import EntriesList from './EntriesList';
+import ExpenseTracker from './ExpenseTracker';
+import { useSyncData } from '../hooks/useSyncData';
 
 const StopTracker = () => {
+  const { 
+    data: logs, 
+    loading: logsLoading, 
+    error: logsError, 
+    updateData: updateLogs 
+  } = useSyncData('logs');
+
   const [activeTab, setActiveTab] = useState('entry');
-  const [logs, setLogs] = useState(() => {
-    const saved = localStorage.getItem('delivery-logs');
-    return saved ? JSON.parse(saved) : [];
-  });
-
-  const [invoiceRange, setInvoiceRange] = useState({
-    startDate: '',
-    endDate: '',
-    totalStops: ''
-  });
-
-  const [comparisonResult, setComparisonResult] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   const [currentLog, setCurrentLog] = useState({
     date: new Date().toISOString().split('T')[0],
     stops: '',
-    extra: ''
+    extra: '',
+    notes: ''
   });
 
   const [paymentConfig, setPaymentConfig] = useState(() => {
@@ -39,10 +47,7 @@ const StopTracker = () => {
   });
 
   const [showAlert, setShowAlert] = useState('');
-
-  useEffect(() => {
-    localStorage.setItem('delivery-logs', JSON.stringify(logs));
-  }, [logs]);
+  const [alertType, setAlertType] = useState('default');
 
   useEffect(() => {
     localStorage.setItem('payment-config', JSON.stringify(paymentConfig));
@@ -56,185 +61,194 @@ const StopTracker = () => {
            ((stops - paymentConfig.cutoffPoint) * paymentConfig.rateAfterCutoff);
   };
 
-  const handleAddEntry = () => {
+  const displayAlert = (message, type = 'default') => {
+    setShowAlert(message);
+    setAlertType(type);
+    setTimeout(() => {
+      setShowAlert('');
+      setAlertType('default');
+    }, 3000);
+  };
+
+  const handleAddEntry = async () => {
     if (!currentLog.stops) {
-      setShowAlert('Please enter number of stops');
+      displayAlert('Please enter number of stops', 'error');
       return;
     }
 
-    const stops = parseInt(currentLog.stops);
-    const extra = currentLog.extra ? parseFloat(currentLog.extra) : 0;
-    const total = calculateRate(stops) + extra;
+    setIsLoading(true);
+    try {
+      const stops = parseInt(currentLog.stops);
+      const extra = currentLog.extra ? parseFloat(currentLog.extra) : 0;
+      const total = calculateRate(stops) + extra;
 
-    const newLog = {
-      id: Date.now(),
-      date: currentLog.date,
-      stops,
-      extra,
-      total
-    };
+      const newLog = {
+        id: Date.now(),
+        date: currentLog.date,
+        stops,
+        extra,
+        total,
+        notes: currentLog.notes
+      };
 
-    setLogs(prev => [...prev, newLog].sort((a, b) => new Date(a.date) - new Date(b.date)));
-    setCurrentLog({ ...currentLog, stops: '', extra: '' });
-    setShowAlert('Entry added successfully');
-    setTimeout(() => setShowAlert(''), 3000);
+      const updatedLogs = [...(logs || []), newLog]
+        .sort((a, b) => new Date(a.date) - new Date(b.date));
+      
+      await updateLogs(updatedLogs);
+      
+      setCurrentLog({ 
+        ...currentLog, 
+        stops: '', 
+        extra: '', 
+        notes: '' 
+      });
+      displayAlert('Entry added successfully', 'success');
+    } catch (error) {
+      displayAlert('Error adding entry. Please try again.', 'error');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleDeleteEntry = (id) => {
-    setLogs(prev => prev.filter(log => log.id !== id));
+  const handleDeleteEntry = async (id) => {
+    try {
+      const updatedLogs = (logs || []).filter(log => log.id !== id);
+      await updateLogs(updatedLogs);
+      displayAlert('Entry deleted successfully', 'success');
+    } catch (error) {
+      displayAlert('Error deleting entry', 'error');
+    }
   };
 
-  const compareInvoice = () => {
-    const { startDate, endDate, totalStops } = invoiceRange;
-    const filteredLogs = logs.filter(log => {
-      const date = new Date(log.date);
-      return date >= new Date(startDate) && date <= new Date(endDate);
-    });
+  if (logsLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="w-8 h-8 animate-spin text-purple-600" />
+      </div>
+    );
+  }
 
-    const yourStops = filteredLogs.reduce((sum, log) => sum + log.stops, 0);
-    const difference = yourStops - parseInt(totalStops);
-
-    setComparisonResult({
-      yourStops,
-      invoiceStops: parseInt(totalStops),
-      difference
-    });
-  };
+  if (logsError) {
+    return (
+      <Alert variant="destructive">
+        <AlertDescription>Error loading data. Please try refreshing the page.</AlertDescription>
+      </Alert>
+    );
+  }
 
   return (
-    <div className="max-w-xl mx-auto p-4 space-y-4">
-     <div className="flex rounded-lg shadow-sm bg-white p-1 sticky top-0 z-10">
-  <Button
-    variant={activeTab === 'entry' ? 'default' : 'ghost'}
-    className="flex-1"
-    onClick={() => setActiveTab('entry')}
-  >
-    <PlusCircle className="w-4 h-4 mr-2" />
-    Entry
-  </Button>
-  <Button
-    variant={activeTab === 'stats' ? 'default' : 'ghost'}
-    className="flex-1"
-    onClick={() => setActiveTab('stats')}
-  >
-    <ChartBar className="w-4 h-4 mr-2" />
-    Stats
-  </Button>
-  <Button
-    variant={activeTab === 'invoice' ? 'default' : 'ghost'}
-    className="flex-1"
-    onClick={() => setActiveTab('invoice')}
-  >
-    <FileText className="w-4 h-4 mr-2" />
-    Invoice
-  </Button>
-  <Button
-    variant={activeTab === 'weekly' ? 'default' : 'ghost'}
-    className="flex-1"
-    onClick={() => setActiveTab('weekly')}
-  >
-    <Calendar className="w-4 h-4 mr-2" />
-    Weekly
-  </Button>
-  <Button
-    variant={activeTab === 'settings' ? 'default' : 'ghost'}
-    className="flex-1"
-    onClick={() => setActiveTab('settings')}
-  >
-    <Settings className="w-4 h-4 mr-2" />
-    Settings
-  </Button>
-</div>
+    <div className="max-w-xl mx-auto space-y-4">
+      {/* Navigation Tabs */}
+      <div className="flex rounded-lg shadow-sm bg-white dark:bg-gray-800 p-1 sticky top-0 z-10">
+        <Button
+          variant={activeTab === 'entry' ? 'default' : 'ghost'}
+          className="flex-1"
+          onClick={() => setActiveTab('entry')}
+        >
+          <PlusCircle className="w-4 h-4 mr-2" />
+          <span className="hidden sm:inline">Entry</span>
+        </Button>
+        <Button
+          variant={activeTab === 'stats' ? 'default' : 'ghost'}
+          className="flex-1"
+          onClick={() => setActiveTab('stats')}
+        >
+          <BarChart2 className="w-4 h-4 mr-2" />
+          <span className="hidden sm:inline">Stats</span>
+        </Button>
+        <Button
+          variant={activeTab === 'expenses' ? 'default' : 'ghost'}
+          className="flex-1"
+          onClick={() => setActiveTab('expenses')}
+        >
+          <Calculator className="w-4 h-4 mr-2" />
+          <span className="hidden sm:inline">Expenses</span>
+        </Button>
+        <Button
+          variant={activeTab === 'weekly' ? 'default' : 'ghost'}
+          className="flex-1"
+          onClick={() => setActiveTab('weekly')}
+        >
+          <Calendar className="w-4 h-4 mr-2" />
+          <span className="hidden sm:inline">Weekly</span>
+        </Button>
+        <Button
+          variant={activeTab === 'settings' ? 'default' : 'ghost'}
+          className="flex-1"
+          onClick={() => setActiveTab('settings')}
+        >
+          <Settings className="w-4 h-4 mr-2" />
+          <span className="hidden sm:inline">Settings</span>
+        </Button>
+      </div>
 
+      {/* Entry Tab */}
       {activeTab === 'entry' && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Add Entry</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <Input
-              type="date"
-              value={currentLog.date}
-              onChange={(e) => setCurrentLog({ ...currentLog, date: e.target.value })}
-              className="w-full"
-            />
-            <Input
-              type="number"
-              placeholder="Number of stops"
-              value={currentLog.stops}
-              onChange={(e) => setCurrentLog({ ...currentLog, stops: e.target.value })}
-              className="w-full"
-            />
-            <Input
-              type="number"
-              placeholder="Extra pay (optional)"
-              value={currentLog.extra}
-              onChange={(e) => setCurrentLog({ ...currentLog, extra: e.target.value })}
-              step="0.01"
-              className="w-full"
-            />
-            <Button onClick={handleAddEntry} className="w-full">Add Entry</Button>
-          </CardContent>
-        </Card>
+        <>
+          <Card>
+            <CardHeader>
+              <CardTitle>Add Entry</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <Input
+                type="date"
+                value={currentLog.date}
+                onChange={(e) => setCurrentLog({ ...currentLog, date: e.target.value })}
+                className="w-full"
+              />
+              <Input
+                type="number"
+                placeholder="Number of stops"
+                value={currentLog.stops}
+                onChange={(e) => setCurrentLog({ ...currentLog, stops: e.target.value })}
+                className="w-full"
+              />
+              <Input
+                type="number"
+                placeholder="Extra pay (optional)"
+                value={currentLog.extra}
+                onChange={(e) => setCurrentLog({ ...currentLog, extra: e.target.value })}
+                step="0.01"
+                className="w-full"
+              />
+              <Input
+                type="text"
+                placeholder="Notes (optional)"
+                value={currentLog.notes}
+                onChange={(e) => setCurrentLog({ ...currentLog, notes: e.target.value })}
+                className="w-full"
+              />
+              <Button 
+                onClick={handleAddEntry} 
+                className="w-full"
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Adding...
+                  </>
+                ) : (
+                  'Add Entry'
+                )}
+              </Button>
+            </CardContent>
+          </Card>
+
+          {(logs || []).length > 0 && <EntriesList logs={logs || []} onDeleteEntry={handleDeleteEntry} />}
+        </>
       )}
 
-      {activeTab === 'stats' && <StatsOverview logs={logs} />}
+      {/* Stats Tab */}
+      {activeTab === 'stats' && <ModernDashboard data={logs || []} />}
 
-      {activeTab === 'invoice' && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Invoice Comparison</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <Input
-              type="date"
-              placeholder="Start Date"
-              value={invoiceRange.startDate}
-              onChange={(e) => setInvoiceRange({...invoiceRange, startDate: e.target.value})}
-            />
-            <Input
-              type="date"
-              placeholder="End Date"
-              value={invoiceRange.endDate}
-              onChange={(e) => setInvoiceRange({...invoiceRange, endDate: e.target.value})}
-            />
-            <Input
-              type="number"
-              placeholder="Invoice Total Stops"
-              value={invoiceRange.totalStops}
-              onChange={(e) => setInvoiceRange({...invoiceRange, totalStops: e.target.value})}
-            />
-            <Button className="w-full" onClick={compareInvoice}>Compare</Button>
+      {/* Expenses Tab */}
+      {activeTab === 'expenses' && <ExpenseTracker />}
 
-            {comparisonResult && (
-              <div className="mt-4 space-y-2">
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="p-3 bg-gray-50 rounded">
-                    <div className="text-sm text-gray-600">Your Total</div>
-                    <div className="text-xl font-bold">{comparisonResult.yourStops}</div>
-                  </div>
-                  <div className="p-3 bg-gray-50 rounded">
-                    <div className="text-sm text-gray-600">Invoice Total</div>
-                    <div className="text-xl font-bold">{comparisonResult.invoiceStops}</div>
-                  </div>
-                </div>
-                <div className={`p-3 rounded ${comparisonResult.difference === 0 ? 'bg-green-50' : 'bg-red-50'}`}>
-                  <div className="text-sm">Difference</div>
-                  <div className={`text-xl font-bold ${comparisonResult.difference === 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    {comparisonResult.difference > 0 ? '+' : ''}{comparisonResult.difference}
-                  </div>
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
+      {/* Weekly Tab */}
+      {activeTab === 'weekly' && <WeeklySummary logs={logs || []} />}
 
-{activeTab === 'stats' && <StatsOverview logs={logs} />}
-
-{activeTab === 'weekly' && <WeeklySummary logs={logs} />}
-{activeTab === 'weekly' && <WeeklySummary logs={logs} />}
-
+      {/* Settings Tab */}
       {activeTab === 'settings' && (
         <PaymentConfig
           currentConfig={paymentConfig}
@@ -242,41 +256,22 @@ const StopTracker = () => {
         />
       )}
 
-      {logs.length > 0 && activeTab === 'entry' && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Recent Entries</CardTitle>
-          </CardHeader>
-          <CardContent className="p-0">
-            <div className="divide-y">
-              {logs.slice().reverse().slice(0, 5).map(log => (
-                <div key={log.id} className="flex justify-between items-center p-4">
-                  <div>
-                    <div className="font-medium">{new Date(log.date).toLocaleDateString()}</div>
-                    <div className="text-sm text-gray-600">
-                      {log.stops} stops {log.extra > 0 ? `+ £${log.extra}` : ''}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <div className="font-medium">£{log.total.toFixed(2)}</div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleDeleteEntry(log.id)}
-                    >
-                      <Trash2 className="w-4 h-4 text-red-500" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
+      {/* Alert */}
       {showAlert && (
-        <Alert className="fixed bottom-4 left-4 right-4">
-          <AlertDescription>{showAlert}</AlertDescription>
+        <Alert 
+          className={`fixed bottom-4 left-4 right-4 ${
+            alertType === 'success' ? 'bg-green-50 border-green-200' :
+            alertType === 'error' ? 'bg-red-50 border-red-200' :
+            'bg-gray-50 border-gray-200'
+          }`}
+        >
+          <AlertDescription className={`${
+            alertType === 'success' ? 'text-green-800' :
+            alertType === 'error' ? 'text-red-800' :
+            'text-gray-800'
+          }`}>
+            {showAlert}
+          </AlertDescription>
         </Alert>
       )}
     </div>
