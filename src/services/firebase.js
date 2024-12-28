@@ -3,7 +3,7 @@ import { getAuth, GoogleAuthProvider } from "firebase/auth";
 import { getFirestore, doc, setDoc, getDoc, onSnapshot } from "firebase/firestore";
 
 const firebaseConfig = {
-  apiKey: "",
+  apiKey: "AIzaSyAZ-6RobdXXlYX8YL0OQV67AVq7Da7Sp2A",
   authDomain: "stop-tracker-v1.firebaseapp.com",
   projectId: "stop-tracker-v1",
   storageBucket: "stop-tracker-v1.firebasestorage.app",
