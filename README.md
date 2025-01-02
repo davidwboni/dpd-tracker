@@ -1,93 +1,59 @@
-# Stop Tracker 📦
+A modern React application designed for delivery drivers to track their stops, calculate earnings, and optimize performance.
+Features
 
-A modern React application for delivery drivers to track stops, calculate earnings, and optimize performance.
+📊 Real-time stop tracking and earnings calculations
+📈 Comprehensive analytics dashboard
+📅 Weekly and monthly performance summaries
+💰 Custom rate configurations
+📱 Responsive design with dark mode support
+🔄 Automatic data synchronization
+📄 DPD invoice analysis and comparison
 
-## Features 🚀
+Tech Stack
 
-- 📊 **Comprehensive Analytics Dashboard**
-  - Track daily, weekly, and monthly performance
-  - Visualize earnings trends
-  - Monitor stop counts and efficiency
+React.js
+Firebase (Authentication & Database)
+Tailwind CSS
+Recharts for data visualization
+Framer Motion for animations
 
-- 💰 **Earnings Management**
-  - Calculate daily earnings
-  - Track bonuses and extra payments
-  - Compare with company invoices
+Getting Started
 
-- 🌓 **Modern UI with Dark Mode**
-  - Clean, intuitive interface
-  - Responsive design for all devices
-  - Eye-friendly dark mode
+Clone the repository:
 
-- 📱 **Progressive Web App**
-  - Install on mobile devices
-  - Work offline
-  - Fast and reliable performance
+bashCopygit clone https://github.com/yourusername/stop-tracker.git
 
-## Tech Stack 💻
+Install dependencies:
 
-- React
-- Firebase (Authentication & Database)
-- TailwindCSS
-- Recharts
-- Framer Motion
-- Shadcn/ui Components
-
-## Getting Started 🏁
-
-1. Clone the repository:
-```bash
-git clone https://github.com/davidwboni/stop-tracker.git
-```
-
-2. Install dependencies:
-```bash
-cd stop-tracker
+bashCopycd stop-tracker
 npm install
-```
 
-3. Set up Firebase:
-   - Create a Firebase project
-   - Add your Firebase config to `src/firebase/config.js`
+Create a .env file with your Firebase configuration:
 
-4. Start the development server:
-```bash
-npm start
-```
-
-## Environment Variables 🔐
-
-Create a `.env` file in the root directory and add:
-
-```env
-REACT_APP_FIREBASE_API_KEY=your_api_key
+envCopyREACT_APP_FIREBASE_API_KEY=your_api_key
 REACT_APP_FIREBASE_AUTH_DOMAIN=your_auth_domain
 REACT_APP_FIREBASE_PROJECT_ID=your_project_id
 REACT_APP_FIREBASE_STORAGE_BUCKET=your_storage_bucket
 REACT_APP_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
 REACT_APP_FIREBASE_APP_ID=your_app_id
-```
 
-## Contributing 🤝
+Start the development server:
 
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+bashCopynpm start
+Recent Updates
 
-## License 📄
+Enhanced weekly performance visualizations with interactive charts
+Modernized UI with improved dark mode support
+Added real-time data synchronization
+Improved invoice analysis capabilities
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+Contributing
 
-## Acknowledgments 🙏
+Fork the repository
+Create your feature branch (git checkout -b feature/AmazingFeature)
+Commit your changes (git commit -m 'Add some AmazingFeature')
+Push to the branch (git push origin feature/AmazingFeature)
+Open a Pull Request
 
-- Thanks to all contributors
-- Inspired by delivery drivers' needs
-- Built with modern best practices
-
-## Contact 📧
-
-Your Name - davidwboni@gmail.com
-
-Project Link: [https://github.com/yourusername/stop-tracker](https://github.com/davidwboni/stop-tracker)
+License
+This project is licensed under the MIT License - see the LICENSE file for details.
