@@ -1,22 +1,21 @@
-import ModernDashboard from './ModernDashboard';
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import {  
   PlusCircle, 
+  FileText, 
   BarChart2, 
   Settings, 
   Calendar,
-  Loader2,
-  Calculator 
+  Loader2
 } from 'lucide-react';
 import { Alert, AlertDescription } from "./ui/alert";
 import PaymentConfig from './PaymentConfig';
 import StatsOverview from './StatsOverview';
 import WeeklySummary from './WeeklySummary';
 import EntriesList from './EntriesList';
-import ExpenseTracker from './ExpenseTracker';
+import InvoiceComparison from './InvoiceComparison';
 import { useSyncData } from '../hooks/useSyncData';
 
 const StopTracker = () => {
@@ -157,12 +156,12 @@ const StopTracker = () => {
           <span className="hidden sm:inline">Stats</span>
         </Button>
         <Button
-          variant={activeTab === 'expenses' ? 'default' : 'ghost'}
+          variant={activeTab === 'invoice' ? 'default' : 'ghost'}
           className="flex-1"
-          onClick={() => setActiveTab('expenses')}
+          onClick={() => setActiveTab('invoice')}
         >
-          <Calculator className="w-4 h-4 mr-2" />
-          <span className="hidden sm:inline">Expenses</span>
+          <FileText className="w-4 h-4 mr-2" />
+          <span className="hidden sm:inline">Invoice</span>
         </Button>
         <Button
           variant={activeTab === 'weekly' ? 'default' : 'ghost'}
@@ -240,10 +239,10 @@ const StopTracker = () => {
       )}
 
       {/* Stats Tab */}
-      {activeTab === 'stats' && <ModernDashboard data={logs || []} />}
+      {activeTab === 'stats' && logs && <StatsOverview logs={logs} />}
 
       {/* Expenses Tab */}
-      {activeTab === 'expenses' && <ExpenseTracker />}
+      {activeTab === 'invoice' && <InvoiceComparison logs={logs || []} />}
 
       {/* Weekly Tab */}
       {activeTab === 'weekly' && <WeeklySummary logs={logs || []} />}

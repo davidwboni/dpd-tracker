@@ -70,9 +70,7 @@ const Auth = ({ onBack }) => {
         const confirmation = await signInWithPhoneNumber(auth, phoneNumber, appVerifier);
         setVerificationId(confirmation.verificationId);
       } else {
-        // Verify code
-        const credential = await verificationId.confirm(formData.code);
-        // User signed in successfully
+     
       }
     } catch (err) {
       setError(getErrorMessage(err));

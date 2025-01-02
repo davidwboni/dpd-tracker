@@ -1,203 +1,176 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  BarChart,
-  Bar,
-  PieChart,
-  Pie,
-  Cell
+import { motion } from 'framer-motion';
+import { 
+  LineChart, Line, BarChart, Bar,
+  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from 'recharts';
-import _ from 'lodash';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "./ui/tabs";
+import { Plus, TrendingUp, FileCheck } from 'lucide-react';
+
+const DashboardCard = ({ title, value, subtitle, icon: Icon, color }) => (
+  <motion.div
+    whileHover={{ y: -2, boxShadow: '0 8px 16px rgba(0, 0, 0, 0.1)' }}
+    className="bg-white dark:bg-gray-800 rounded-xl p-6"
+  >
+    <div className="flex items-center justify-between">
+      <div>
+        <p className="text-sm font-medium text-gray-500 dark:text-gray-400">{title}</p>
+        <h3 className={`text-2xl font-bold mt-1 ${color}`}>{value}</h3>
+        {subtitle && (
+          <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">{subtitle}</p>
+        )}
+      </div>
+      <div className={`${color} opacity-80 p-3 bg-gray-100 dark:bg-gray-700 rounded-full`}>
+        <Icon size={24} />
+      </div>
+    </div>
+  </motion.div>
+);
 
 const StatsOverview = ({ logs }) => {
-  // Memoized calculations for performance
-  const stats = useMemo(() => {
-    if (!logs.length) return null;
+  // Calculate metrics
+  const totalStops = logs.reduce((sum, entry) => sum + entry.stops, 0);
+  const averageStops = Math.round(totalStops / logs.length) || 0;
+  const bestDay = logs.reduce((best, entry) => 
+    entry.stops > (best?.stops || 0) ? entry : best, null);
 
-    // Basic stats
-    const totalEarnings = logs.reduce((sum, log) => sum + log.total, 0);
-    const totalStops = logs.reduce((sum, log) => sum + log.stops, 0);
-    const averageStops = totalStops / logs.length;
-    const bestDay = logs.reduce((best, log) => log.stops > best.stops ? log : best, logs[0]);
-
-    // Weekly performance
-    const byDayOfWeek = _.groupBy(logs, log => 
-      new Date(log.date).toLocaleDateString('en-US', { weekday: 'long' })
-    );
-    const weekdayStats = Object.entries(byDayOfWeek).map(([day, dayLogs]) => ({
-      day,
-      averageStops: dayLogs.reduce((sum, log) => sum + log.stops, 0) / dayLogs.length,
-      totalEarnings: dayLogs.reduce((sum, log) => sum + log.total, 0)
+  // Prepare chart data
+  const weeklyData = React.useMemo(() => {
+    const last7Days = logs.slice(-7).map(entry => ({
+      date: new Date(entry.date).toLocaleDateString('en-US', { weekday: 'short' }),
+      stops: entry.stops,
+      earnings: entry.total
     }));
-
-    // Monthly trends
-    const byMonth = _.groupBy(logs, log => 
-      new Date(log.date).toLocaleDateString('en-US', { year: 'numeric', month: 'long' })
-    );
-    const monthlyTrends = Object.entries(byMonth).map(([month, monthLogs]) => ({
-      month,
-      totalStops: monthLogs.reduce((sum, log) => sum + log.stops, 0),
-      totalEarnings: monthLogs.reduce((sum, log) => sum + log.total, 0),
-      averageStops: monthLogs.reduce((sum, log) => sum + log.stops, 0) / monthLogs.length
-    }));
-
-    // Performance distribution
-    const stopRanges = _.groupBy(logs, log => {
-      const stops = log.stops;
-      if (stops < 80) return '< 80';
-      if (stops < 100) return '80-100';
-      if (stops < 120) return '100-120';
-      return '120+';
-    });
-    const distribution = Object.entries(stopRanges).map(([range, rangeLogs]) => ({
-      range,
-      count: rangeLogs.length,
-      percentage: (rangeLogs.length / logs.length) * 100
-    }));
-
-    return {
-      totalEarnings,
-      averageStops,
-      bestDay,
-      totalDays: logs.length,
-      weekdayStats,
-      monthlyTrends,
-      distribution,
-      averageEarningsPerDay: totalEarnings / logs.length,
-      averageEarningsPerStop: totalEarnings / totalStops
-    };
+    return last7Days;
   }, [logs]);
 
-  if (!stats) return null;
+  const monthlyData = React.useMemo(() => {
+    const byMonth = logs.reduce((acc, entry) => {
+      const month = new Date(entry.date).toLocaleDateString('en-US', { month: 'short' });
+      if (!acc[month]) acc[month] = { stops: 0, earnings: 0, count: 0 };
+      acc[month].stops += entry.stops;
+      acc[month].earnings += entry.total;
+      acc[month].count += 1;
+      return acc;
+    }, {});
 
-  const COLORS = ['#8884d8', '#82ca9d', '#ffc658', '#ff8042'];
+    return Object.entries(byMonth).map(([month, stats]) => ({
+      month,
+      averageStops: Math.round(stats.stops / stats.count),
+      totalEarnings: stats.earnings
+    }));
+  }, [logs]);
 
   return (
-    <div className="space-y-6">
+    <div className="p-6 space-y-6">
       {/* Summary Cards */}
-      <div className="grid gap-4 md:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Earnings</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">£{stats.totalEarnings.toFixed(2)}</div>
-            <p className="text-xs text-muted-foreground">
-              £{stats.averageEarningsPerDay.toFixed(2)} per day
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Average Stops</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{Math.round(stats.averageStops)}</div>
-            <p className="text-xs text-muted-foreground">
-              £{stats.averageEarningsPerStop.toFixed(2)} per stop
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Best Day</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.bestDay.stops}</div>
-            <p className="text-xs text-muted-foreground">
-              {new Date(stats.bestDay.date).toLocaleDateString()}
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Days</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.totalDays}</div>
-          </CardContent>
-        </Card>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <DashboardCard
+          title="Today's Stops"
+          value={logs[logs.length - 1]?.stops || 0}
+          subtitle="Latest entry"
+          icon={Plus}
+          color="text-emerald-600 dark:text-emerald-400"
+        />
+        <DashboardCard
+          title="Average Stops"
+          value={averageStops}
+          subtitle="All time"
+          icon={TrendingUp}
+          color="text-purple-600 dark:text-purple-400"
+        />
+        <DashboardCard
+          title="Best Day"
+          value={bestDay?.stops || 0}
+          subtitle={bestDay ? new Date(bestDay.date).toLocaleDateString() : 'No data'}
+          icon={FileCheck}
+          color="text-blue-600 dark:text-blue-400"
+        />
       </div>
 
-      {/* Weekly Performance */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Weekly Performance</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="h-[300px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={stats.weekdayStats}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="day" />
-                <YAxis yAxisId="left" orientation="left" stroke="#8884d8" />
-                <YAxis yAxisId="right" orientation="right" stroke="#82ca9d" />
-                <Tooltip />
-                <Bar yAxisId="left" dataKey="averageStops" fill="#8884d8" name="Avg Stops" />
-                <Bar yAxisId="right" dataKey="totalEarnings" fill="#82ca9d" name="Earnings" />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Charts */}
+      <Tabs defaultValue="weekly" className="w-full">
+        <TabsList className="grid w-full grid-cols-2 max-w-md mb-6">
+          <TabsTrigger value="weekly">Weekly View</TabsTrigger>
+          <TabsTrigger value="monthly">Monthly View</TabsTrigger>
+        </TabsList>
 
-      {/* Monthly Trends */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Monthly Trends</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="h-[300px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={stats.monthlyTrends}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="month" />
-                <YAxis />
-                <Tooltip />
-                <Line type="monotone" dataKey="averageStops" stroke="#8884d8" name="Avg Stops" />
-                <Line type="monotone" dataKey="totalEarnings" stroke="#82ca9d" name="Total Earnings" />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        </CardContent>
-      </Card>
+        <TabsContent value="weekly">
+          <Card>
+            <CardHeader>
+              <CardTitle>Weekly Performance</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[400px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={weeklyData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="date" />
+                    <YAxis />
+                    <Tooltip 
+                      contentStyle={{
+                        backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                        borderRadius: '8px',
+                        border: 'none',
+                        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
+                      }}
+                    />
+                    <Bar 
+                      dataKey="stops" 
+                      fill="#8b5cf6" 
+                      radius={[4, 4, 0, 0]}
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
-      {/* Stop Distribution */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Stops Distribution</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="h-[300px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={stats.distribution}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
-                  outerRadius={80}
-                  fill="#8884d8"
-                  dataKey="count"
-                >
-                  {stats.distribution.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-        </CardContent>
-      </Card>
+        <TabsContent value="monthly">
+          <Card>
+            <CardHeader>
+              <CardTitle>Monthly Trends</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[400px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={monthlyData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="month" />
+                    <YAxis />
+                    <Tooltip 
+                      contentStyle={{
+                        backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                        borderRadius: '8px',
+                        border: 'none',
+                        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
+                      }}
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="averageStops" 
+                      stroke="#8b5cf6" 
+                      strokeWidth={2}
+                      dot={{ fill: '#8b5cf6', strokeWidth: 2 }}
+                      activeDot={{ r: 8 }}
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="totalEarnings" 
+                      stroke="#ec4899" 
+                      strokeWidth={2}
+                      dot={{ fill: '#ec4899', strokeWidth: 2 }}
+                      activeDot={{ r: 8 }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
